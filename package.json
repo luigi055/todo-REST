@@ -4,10 +4,22 @@
   "main": "server.js",
   "author": "Pedro La Rosa",
   "license": "MIT",
+  "scripts": {
+    "start": "node ./server/server.js",
+    "start-watch": "nodemon ./server/server.js",
+    "test": "mocha server/**/*.test.js",
+    "test-watch": "nodemon --exec \"yarn test\""
+  },
   "dependencies": {
     "body-parser": "^1.17.1",
     "express": "^4.15.2",
     "mongodb": "^2.2.25",
     "mongoose": "^4.9.2"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "supertest": "^3.0.0",
+    "nodemon": "^1.11.0"
   }
 }

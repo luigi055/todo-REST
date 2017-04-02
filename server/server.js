@@ -31,3 +31,6 @@ app.listen(PORT, (res) => {
   console.log(`successed connected to localhost: ${PORT}`);
 });
 
+module.exports = {
+  app,
+};
