@@ -4,8 +4,18 @@ const request = require('supertest');
 const { app } = require('../server');
 const { Todo } = require('../models/todo');
 
+const todos = [
+  {
+    text: 'First Test Todo',
+  }, {
+    text: 'Second Test Todo',
+  }
+];
+
 beforeEach(done => {
-  Todo.remove({}).then(() => done()); // clean the database before each test
+  Todo.remove({}).then(() => {
+    return Todo.insertMany(todos);
+  }).then(() => done()); // clean the database before each test and send dummy database info
 });
 
 describe('POST /todos', () => {
@@ -25,14 +35,14 @@ describe('POST /todos', () => {
         if (err) return done(err);
 
         // fecth all the todos
-        Todo.find()
+        Todo.find({ text })
           .then(todos => {
             expect(todos.length).to.be.equal(1);
             expect(todos[0].text).to.be.equal(text);
             done();
           })
           .catch(error => done(error));
-      })
+      });
   });
 
   it('should not create todo with invalid body data', (done) => {
@@ -46,10 +56,22 @@ describe('POST /todos', () => {
 
         Todo.find()
           .then(todos => {
-            expect(todos.length).to.equal(0);
+            expect(todos.length).to.equal(2);
             done();
           })
           .catch(error => done(error));
       })
+  });
+});
+
+describe('GET /todos', () => {
+  it('should get all todos', done => {
+    request(app)
+      .get('/todos')
+      .expect(200)
+      .expect(res => {
+        expect(res.body.todos.length).to.equal(2);
+      })
+      .end(done);
   });
 });
