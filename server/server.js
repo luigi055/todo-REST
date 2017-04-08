@@ -28,6 +28,7 @@ app.post('/todos', (req, res) => {
     });
 });
 
+// Get all existing todos
 app.get('/todos', (req, res) => {
   Todo.find()
     .then(todos => {
@@ -41,6 +42,7 @@ app.get('/todos', (req, res) => {
     });
 });
 
+// Get individual Todo by ID
 app.get('/todos/:id', (req, res) => {
   const id = req.params.id;
   if (!ObjectID.isValid(id)) {
@@ -54,7 +56,7 @@ app.get('/todos/:id', (req, res) => {
       if (!todo) {
         return res.status(404).send('Todo not Found');
       };
-      res.status(200).send({
+      res.send({
         todo,
       });
     }, error => {
