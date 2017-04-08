@@ -36,15 +36,11 @@ describe('POST /todos', () => {
   });
 
   it('should not create todo with invalid body data', (done) => {
-    const text = '';
 
     request(app)
       .post('/todos')
-      .send({ text })
+      .send({})
       .expect(400)
-      .expect(res => {
-        expect(res.body.text).to.not.equal(text);
-      })
       .end((err, res) => {
         if (err) return done(err);
 

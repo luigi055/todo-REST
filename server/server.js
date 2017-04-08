@@ -27,6 +27,19 @@ app.post('/todos', (req, res) => {
     });
 });
 
+app.get('/todos', (req, res) => {
+  Todo.find()
+    .then(todos => {
+      // since our list is an array will going to wrap it in an object property
+      res.send({
+        todos,
+      });
+
+    }, error => {
+      res.status(400).send(error);
+    });
+});
+
 app.listen(PORT, (res) => {
   console.log(`successed connected to localhost: ${PORT}`);
 });
