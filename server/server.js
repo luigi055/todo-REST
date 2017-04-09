@@ -68,6 +68,30 @@ app.listen(PORT, (res) => {
   console.log(`started up to port: ${PORT}`);
 });
 
+// DELETE individual Todo by ID
+app.delete('/todos/:id', (req, res) => {
+  const id = req.params.id;
+  if (!ObjectID.isValid(id)) {
+    return res
+      .status(404)
+      .send('Invalid Id!');
+  }
+
+  Todo.findByIdAndRemove(id)
+    .then(todo => {
+      if (!todo) {
+        return res.status(404).send('Todo not Found');
+      };
+      res
+        .send(
+        todo
+      )
+        .status(200);
+    }).catch(error => {
+      res.status(400).send('Error to connect db');
+    });
+});
+
 module.exports = {
   app,
 };
