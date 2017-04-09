@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
@@ -84,7 +85,7 @@ app.delete('/todos/:id', (req, res) => {
       };
       res
         .send({
-        todo
+          todo
         })
         .status(200);
     }).catch(error => {
@@ -92,6 +93,40 @@ app.delete('/todos/:id', (req, res) => {
     });
 });
 
-module.exports = {
-  app,
-};
+// this allows us update our todos itmes
+app.patch('/todos/:id', (req, res) => {
+  const id = req.params.id;
+  // Creates an object composed of the picked object properties.
+  // https://lodash.com/docs/4.17.4#pick
+  const body = _.pick(req.body, ['text', 'completed']);
+  // similar to req.body.text and req.body.completed
+
+  if (!ObjectID.isValid(id)) {
+    return res
+      .status(404)
+      .send('Invalid Id!');
+  }
+
+  if (typeof body === 'boolean' && body.completed) {
+    body.completedAt = new Date().getTime();
+  } else {
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  Todo.findByIdAndUpdate(id, {$set: body}, {new: true})
+    .then(todo => {
+      if (!todo) {
+        return res.status(404).send('Todo not Found');
+      };
+      res
+        .send({
+          todo
+        })
+    })
+    .catch(e => res.status(400).send());
+});
+
+  module.exports = {
+    app,
+  };
