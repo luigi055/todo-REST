@@ -96,10 +96,6 @@ app.delete('/todos/:id', (req, res) => {
 // this allows us update our todos itmes
 app.patch('/todos/:id', (req, res) => {
   const id = req.params.id;
-  // Creates an object composed of the picked object properties.
-  // https://lodash.com/docs/4.17.4#pick
-  const body = _.pick(req.body, ['text', 'completed']);
-  // similar to req.body.text and req.body.completed
 
   if (!ObjectID.isValid(id)) {
     return res
@@ -107,14 +103,14 @@ app.patch('/todos/:id', (req, res) => {
       .send('Invalid Id!');
   }
 
-  if (_.isBoolean(body.completed) && body.completed) {
-    body.completedAt = new Date().getTime();
+  if (typeof req.body.completed === 'boolean' && req.body.completed) {
+    req.body.completedAt = new Date().getTime();
   } else {
-    body.completed = false;
-    body.completedAt = null;
+    req.body.completed = false;
+    req.body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true})
+  Todo.findByIdAndUpdate(id, {$set: req.body}, {new: true})
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not Found');
