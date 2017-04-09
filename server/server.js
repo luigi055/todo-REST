@@ -65,7 +65,7 @@ app.get('/todos/:id', (req, res) => {
 })
 
 app.listen(PORT, (res) => {
-  console.log(`successed connected to localhost: ${PORT}`);
+  console.log(`started up to port: ${PORT}`);
 });
 
 module.exports = {
