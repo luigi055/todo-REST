@@ -83,9 +83,9 @@ app.delete('/todos/:id', (req, res) => {
         return res.status(404).send('Todo not Found');
       };
       res
-        .send(
+        .send({
         todo
-      )
+        })
         .status(200);
     }).catch(error => {
       res.status(400).send('Error to connect db');

@@ -110,22 +110,33 @@ describe('GET /todos/:id', () => {
 });
 
 describe('DELETE /todos/:id', () => {
-  it('should return todo doc', done => {
+  it('should remove a todo doc', done => {
+    var hexId = todos[1]._id.toHexString();
     request(app)
       // toHexString() is a method to transform object id to string id
-      .get(`/todos/${todos[0]._id.toHexString()}`) 
+      .delete(`/todos/${hexId}`) 
       .expect(200)
       .expect(res => {
-        expect(res.body.todo.text).to.be.equal(todos[0].text);
+        expect(res.body.todo._id).to.be.deep.equal(hexId);
       })
-      .end(done);
+      .end((err, res) => {
+        // We will connect to the server to check if the todo was
+        // successfully removed
+        if(err) return done(err);
+
+        // query database Using findById
+        Todo.findById(hexId).then(todo => {
+          expect(todo).to.not.exist;
+          done();
+        }).catch(e => done(e));
+      });
   });
 
   it('should return 404 if todo not found', done => {
     // passing an VALID todo id that doesn't exist in the db
     const hexId = new ObjectID('58e9714021e8780ba4f8cf19').toHexString();
     request(app)
-      .get(`/todos/${hexId}`) 
+      .delete(`/todos/${hexId}`) 
       .expect(404)
       .end(done);
   });
@@ -133,7 +144,7 @@ describe('DELETE /todos/:id', () => {
   it('should return 404 if invalid', done => {
     request(app)
       // passing an invalid id
-      .get(`/todos/123abc`) 
+      .delete(`/todos/123abc`) 
       .expect(404)
       .end(done);
   });
