@@ -107,7 +107,7 @@ app.patch('/todos/:id', (req, res) => {
       .send('Invalid Id!');
   }
 
-  if (typeof body === 'boolean' && body.completed) {
+  if (_.isBoolean(body.completed) && body.completed) {
     body.completedAt = new Date().getTime();
   } else {
     body.completed = false;
