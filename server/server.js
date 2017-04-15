@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
+const authenticate = require('./middleware/authenticate');
 
 const PORT = process.env.PORT;
 
@@ -67,7 +68,6 @@ app.get('/todos/:id', (req, res) => {
       res.status(400).send('Error to connect db');
     });
 })
-
 
 // DELETE individual Todo by ID
 app.delete('/todos/:id', (req, res) => {
@@ -141,6 +141,22 @@ app.post('/users', (req, res) => {
     }).catch(err => {
       res.status(400).send(err);
     });
+});
+
+app.get('/users/me', authenticate, (req, res) => {
+  res.send(req.user);
+
+  // WE WILL USE THE MIDDLEWARE TO  AUTHENTICATE
+  // var token = req.header('x-auth'); // get the value of x-auth
+  // User.findByToken(token).then(user => {
+  //   if (!user) {
+  //     return Promise.reject(); // invoque the catch method
+  //   }
+
+  //   res.send(user);
+  // }).catch(e => {
+  //   res.status(401).send()
+  // });
 });
 
 app.listen(PORT, (res) => {
