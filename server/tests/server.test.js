@@ -72,7 +72,7 @@ describe('GET /todos/:id', () => {
   it('should return todo doc', done => {
     request(app)
       // toHexString() is a method to transform object id to string id
-      .get(`/todos/${todos[0]._id.toHexString()}`) 
+      .get(`/todos/${todos[0]._id.toHexString()}`)
       .expect(200)
       .expect(res => {
         expect(res.body.todo.text).to.be.equal(todos[0].text);
@@ -84,7 +84,7 @@ describe('GET /todos/:id', () => {
     // passing an VALID todo id that doesn't exist in the db
     const hexId = new ObjectID('58e9714021e8780ba4f8cf19').toHexString();
     request(app)
-      .get(`/todos/${hexId}`) 
+      .get(`/todos/${hexId}`)
       .expect(404)
       .end(done);
   });
@@ -92,7 +92,7 @@ describe('GET /todos/:id', () => {
   it('should return 404 if invalid', done => {
     request(app)
       // passing an invalid id
-      .get(`/todos/123abc`) 
+      .get(`/todos/123abc`)
       .expect(404)
       .end(done);
   });
@@ -103,7 +103,7 @@ describe('DELETE /todos/:id', () => {
     var hexId = todos[1]._id.toHexString();
     request(app)
       // toHexString() is a method to transform object id to string id
-      .delete(`/todos/${hexId}`) 
+      .delete(`/todos/${hexId}`)
       .expect(200)
       .expect(res => {
         expect(res.body.todo._id).to.be.deep.equal(hexId);
@@ -111,7 +111,7 @@ describe('DELETE /todos/:id', () => {
       .end((err, res) => {
         // We will connect to the server to check if the todo was
         // successfully removed
-        if(err) return done(err);
+        if (err) return done(err);
 
         // query database Using findById
         Todo.findById(hexId).then(todo => {
@@ -125,7 +125,7 @@ describe('DELETE /todos/:id', () => {
     // passing an VALID todo id that doesn't exist in the db
     const hexId = new ObjectID('58e9714021e8780ba4f8cf19').toHexString();
     request(app)
-      .delete(`/todos/${hexId}`) 
+      .delete(`/todos/${hexId}`)
       .expect(404)
       .end(done);
   });
@@ -133,7 +133,7 @@ describe('DELETE /todos/:id', () => {
   it('should return 404 if invalid', done => {
     request(app)
       // passing an invalid id
-      .delete(`/todos/123abc`) 
+      .delete(`/todos/123abc`)
       .expect(404)
       .end(done);
   });
@@ -168,7 +168,7 @@ describe('PATCH /todos/:id', () => {
     // update text, set completed to false
     // 200
     // text is changed, completed is false, completedAt is null
-    
+
     const hexId = todos[1]._id.toHexString();
     const text = 'update this todo text!!!!';
 
@@ -192,7 +192,7 @@ describe('GET /users/me', () => {
   it('should return user if authenticated', done => {
     request(app)
       .get('/users/me')
-      .set('x-auth',users[0].tokens[0].token) // set the header
+      .set('x-auth', users[0].tokens[0].token) // set the header
       .expect(200)
       .expect((res) => {
         expect(res.body._id).to.equal(users[0]._id.toHexString());
@@ -242,15 +242,15 @@ describe('POST /users', () => {
       })
       .end(err => {
         // connect to our db to search the user we created
-        if(err) {
+        if (err) {
           return done(err);
         }
 
-        User.findOne({email}).then(user => {
+        User.findOne({ email }).then(user => {
           expect(user).to.exist;
           expect(user.password).to.not.equal(password); // since it should be hashed when sent to db
           done();
-        })
+        }).catch(err => done(err));
       });
   });
 
@@ -277,3 +277,54 @@ describe('POST /users', () => {
       .end(done);
   });
 })
+
+describe('POST /users/login', () => {
+  it('should login users and returns Auth token', done => {
+    request(app)
+      .post('/users/login')
+      .send({
+        email: users[1].email,
+        password: users[1].password,
+      })
+      .expect(200)
+      .expect(res => {
+        expect(res.headers['x-auth']).to.exist;
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findById(users[1]._id).then(user => {
+          expect(user.tokens[0]).to.include({
+            access: 'auth',
+            token: res.headers['x-auth'],
+          });
+          done();
+        }).catch(err => done(err));
+      });
+  });
+
+  it('should reject invalid login', done => {
+    request(app)
+      .post('/users/login')
+      .send({
+        email: 'email',
+        password: '123',
+      })
+      .expect(400)
+      .expect(res => {
+        expect(res.headers['x-auth']).to.not.exist;
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findById(users[1]._id).then(user => {
+          expect(user.tokens[0]).to.be.empty;
+          done();
+        }).catch(err => done(err));
+      });
+  });
+});
