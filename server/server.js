@@ -4,6 +4,7 @@ const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
@@ -67,9 +68,6 @@ app.get('/todos/:id', (req, res) => {
     });
 })
 
-app.listen(PORT, (res) => {
-  console.log(`started up to port: ${PORT}`);
-});
 
 // DELETE individual Todo by ID
 app.delete('/todos/:id', (req, res) => {
@@ -112,7 +110,7 @@ app.patch('/todos/:id', (req, res) => {
     req.body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id, {$set: req.body}, {new: true})
+  Todo.findByIdAndUpdate(id, { $set: req.body }, { new: true })
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not Found');
@@ -125,6 +123,30 @@ app.patch('/todos/:id', (req, res) => {
     .catch(e => res.status(400).send());
 });
 
-  module.exports = {
-    app,
-  };
+app.post('/users', (req, res) => {
+  let body = _.pick(req.body, ['email', 'password']);
+
+  // body is the equivalent to  { email: email, password: password }
+  // another alternative without using lodash is 
+  // { email: req.body.email, password: req.body.password }
+  const user = new User(body);
+  user.save()
+    .then(() => {
+      return user.generateAuthToken(); // returns a promise
+      console.log(`save user: ${JSON.stringify(user, null, 2)}`);
+    }).then(token => {
+      // when you start a header with x- you're creating a custom header
+      // we can check if the token was generated checkin the x-auth variable in headers in postman
+      res.header('x-auth', token).send(user.toJSON());
+    }).catch(err => {
+      res.status(400).send(err);
+    });
+});
+
+app.listen(PORT, (res) => {
+  console.log(`started up to port: ${PORT}`);
+});
+
+module.exports = {
+  app,
+};
