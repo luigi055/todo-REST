@@ -70,6 +70,30 @@ userSchema.methods.generateAuthToken = function generateToken() {
   });
 };
 
+userSchema.statics.findByCredentials = function (email, password) {
+  const User = this;
+
+  // chaining the promise
+  return User.findOne({ email }).then(user => {
+    if (!user) {
+      return Promise.reject(); // activate .catch()
+    }
+
+    // since bcrypt only support callback functions and we want to use promises
+    // we're going to wrap that bcrypt with a new promise
+    return new Promise((resolve, reject) => {
+      // Use bcrypt.compare to comprare password with user-password
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      });
+    })
+  });
+}
+
 userSchema.statics.findByToken = function (token) {
   var User = this; // User with capitalized U
   var decoded;
@@ -91,7 +115,7 @@ userSchema.statics.findByToken = function (token) {
 }
 
 // Mongoose middleware before save (event) the document
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   var user = this;
 
   var userModified = user.isModified('password'); // Boolean
