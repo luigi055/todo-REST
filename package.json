@@ -7,8 +7,8 @@
   "scripts": {
     "start": "node server/server.js",
     "start-watch": "nodemon ./server/server.js",
-    "test": "export NODE_ENV=test || SET NODE_ENV=test& mocha server/**/*.test.js",
-    "test-watch": "export NODE_ENV=test || SET NODE_ENV=test& nodemon --exec \"yarn test\""
+    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha server/**/*.test.js",
+    "test-watch": "export NODE_ENV=test || SET \"NODE_ENV=test\" && nodemon --exec \"yarn test\""
   },
   "engines": {
     "node": "6.10.0"
