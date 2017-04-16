@@ -94,6 +94,18 @@ userSchema.statics.findByCredentials = function (email, password) {
   });
 }
 
+userSchema.methods.removeToken = function (token) {
+  var user = this;
+
+  return user.update({
+    $pull: {
+      tokens: {
+        token, // if this token is equal to the token passed in from the arguments. will remove this
+      }
+    }
+  });
+}
+
 userSchema.statics.findByToken = function (token) {
   var User = this; // User with capitalized U
   var decoded;
