@@ -16,6 +16,7 @@ describe('POST /todos', () => {
 
     request(app)
       .post('/todos')
+      .set('x-auth', users[0].tokens[0].token) // needed if our todo is private
       .send({
         text,
       })
@@ -41,6 +42,7 @@ describe('POST /todos', () => {
 
     request(app)
       .post('/todos')
+      .set('x-auth', users[0].tokens[0].token) // needed if our todo is private
       .send({})
       .expect(400)
       .end((err, res) => {
@@ -60,9 +62,12 @@ describe('GET /todos', () => {
   it('should get all todos', done => {
     request(app)
       .get('/todos')
+      .set('x-auth', users[0].tokens[0].token) // needed if our todo is private
       .expect(200)
       .expect(res => {
-        expect(res.body.todos.length).to.equal(2);
+        // since the user just have created 1 todo 
+        // (there is just one todo asociated with this authro)
+        expect(res.body.todos.length).to.equal(1);
       })
       .end(done);
   });
@@ -74,9 +79,18 @@ describe('GET /todos/:id', () => {
       // toHexString() is a method to transform object id to string id
       .get(`/todos/${todos[0]._id.toHexString()}`)
       .expect(200)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(res => {
         expect(res.body.todo.text).to.be.equal(todos[0].text);
       })
+      .end(done);
+  });
+
+  it('should not return todo doc by other users', done => {
+    request(app)
+      .get(`/todos/${todos[1]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token) // get the second user but x-auth are bringing the first user token
+      .expect(404)
       .end(done);
   });
 
@@ -85,6 +99,7 @@ describe('GET /todos/:id', () => {
     const hexId = new ObjectID('58e9714021e8780ba4f8cf19').toHexString();
     request(app)
       .get(`/todos/${hexId}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -93,6 +108,7 @@ describe('GET /todos/:id', () => {
     request(app)
       // passing an invalid id
       .get(`/todos/123abc`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -104,6 +120,7 @@ describe('DELETE /todos/:id', () => {
     request(app)
       // toHexString() is a method to transform object id to string id
       .delete(`/todos/${hexId}`)
+      .set('x-auth', users[1].tokens[0].token) // comparing the first user with teh first todo
       .expect(200)
       .expect(res => {
         expect(res.body.todo._id).to.be.deep.equal(hexId);
@@ -121,11 +138,32 @@ describe('DELETE /todos/:id', () => {
       });
   });
 
+  it('should NOT remove a todo doc of other users', done => {
+    var hexId = todos[0]._id.toHexString();
+    request(app)
+      // toHexString() is a method to transform object id to string id
+      .delete(`/todos/${hexId}`)
+      .set('x-auth', users[1].tokens[0].token) // comparing the first user with teh first todo
+      .expect(404)
+      .end((err, res) => {
+        // We will connect to the server to check if the todo was
+        // successfully removed
+        if (err) return done(err);
+
+        // query database Using findById
+        Todo.findById(hexId).then(todo => {
+          expect(todo).to.exist;
+          done();
+        }).catch(e => done(e));
+      });
+  });
+
   it('should return 404 if todo not found', done => {
     // passing an VALID todo id that doesn't exist in the db
     const hexId = new ObjectID('58e9714021e8780ba4f8cf19').toHexString();
     request(app)
       .delete(`/todos/${hexId}`)
+      .set('x-auth', users[1].tokens[0].token) // needed if our todo is private
       .expect(404)
       .end(done);
   });
@@ -134,6 +172,7 @@ describe('DELETE /todos/:id', () => {
     request(app)
       // passing an invalid id
       .delete(`/todos/123abc`)
+      .set('x-auth', users[1].tokens[0].token) // needed if our todo is private
       .expect(404)
       .end(done);
   });
@@ -147,9 +186,10 @@ describe('PATCH /todos/:id', () => {
     // text is changed, completed is true and completedAt is a number
     const hexId = todos[0]._id.toHexString();
     const text = 'update this todo text';
-
+    // auth as first user
     request(app)
       .patch(`/todos/${hexId}`)
+      .set('x-auth', users[0].tokens[0].token) // needed if our todo is private
       .send({
         completed: true,
         text,
@@ -159,6 +199,24 @@ describe('PATCH /todos/:id', () => {
         expect(res.body.todo.text).to.equal(text);
         expect(res.body.todo.completed).to.equal(true);
         expect(res.body.todo.completedAt).to.be.a('number');
+      })
+      .end(done);
+  });
+
+  it('should not update the todo item of others users', done => {
+
+    const hexId = todos[0]._id.toHexString();
+    const text = 'update this todo text';
+    request(app)
+      .patch(`/todos/${hexId}`)
+      .set('x-auth', users[1].tokens[0].token) // needed if our todo is private
+      .send({
+        completed: true,
+        text,
+      })
+      .expect(404)
+      .expect(res => {
+        expect(res.body.todo).to.be.empty;
       })
       .end(done);
   });
@@ -174,6 +232,7 @@ describe('PATCH /todos/:id', () => {
 
     request(app)
       .patch(`/todos/${hexId}`)
+      .set('x-auth', users[1].tokens[0].token) // needed if our todo is private
       .send({
         completed: false,
         text,
@@ -296,7 +355,7 @@ describe('POST /users/login', () => {
         }
 
         User.findById(users[1]._id).then(user => {
-          expect(user.tokens[0]).to.include({
+          expect(user.tokens[1]).to.include({
             access: 'auth',
             token: res.headers['x-auth'],
           });
@@ -322,7 +381,7 @@ describe('POST /users/login', () => {
         }
 
         User.findById(users[1]._id).then(user => {
-          expect(user.tokens[0]).to.be.empty;
+          expect(user.tokens.length).to.be.equal(1);
           done();
         }).catch(err => done(err));
       });

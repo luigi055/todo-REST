@@ -16,11 +16,12 @@ const app = express();
 app.use(bodyParser.json());
 
 // send data from client to server
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
   console.log(req.body);
 
   var todo = new Todo({
     text: req.body.text,
+    _creator: req.user._id, // save the id of the user which create this todo
   });
 
   todo.save()
@@ -34,8 +35,10 @@ app.post('/todos', (req, res) => {
 });
 
 // Get all existing todos
-app.get('/todos', (req, res) => {
-  Todo.find()
+app.get('/todos', authenticate, (req, res) => {
+  Todo.find({
+    _creator: req.user._id,// Just find the specific todos of this user id
+  })
     .then(todos => {
       // since our list is an array will going to wrap it in an object property
       res.send({
@@ -48,7 +51,7 @@ app.get('/todos', (req, res) => {
 });
 
 // Get individual Todo by ID
-app.get('/todos/:id', (req, res) => {
+app.get('/todos/:id', authenticate, (req, res) => {
   const id = req.params.id;
   if (!ObjectID.isValid(id)) {
     return res
@@ -56,7 +59,10 @@ app.get('/todos/:id', (req, res) => {
       .send('Invalid Id!');
   }
 
-  Todo.findById(id)
+  Todo.findOne({
+    _id: id,
+    _creator: req.user._id,
+  })
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not Found');
@@ -70,7 +76,7 @@ app.get('/todos/:id', (req, res) => {
 })
 
 // DELETE individual Todo by ID
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
   const id = req.params.id;
   if (!ObjectID.isValid(id)) {
     return res
@@ -78,7 +84,10 @@ app.delete('/todos/:id', (req, res) => {
       .send('Invalid Id!');
   }
 
-  Todo.findByIdAndRemove(id)
+  Todo.findOneAndRemove({
+    _id: id,
+    _creator: req.user._id,
+  })
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not Found');
@@ -94,7 +103,7 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 // this allows us update our todos itmes
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
   const id = req.params.id;
 
   if (!ObjectID.isValid(id)) {
@@ -110,7 +119,10 @@ app.patch('/todos/:id', (req, res) => {
     req.body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id, { $set: req.body }, { new: true })
+  Todo.findOneAndUpdate({
+    _id: id,
+    _creator: req.user._id,
+  }, { $set: req.body }, { new: true })
     .then(todo => {
       if (!todo) {
         return res.status(404).send('Todo not Found');
